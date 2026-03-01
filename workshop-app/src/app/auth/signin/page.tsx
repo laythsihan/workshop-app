@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -21,6 +21,29 @@ function getErrorMessage(error: string | null): string {
 }
 
 export default function SignInPage() {
+  return (
+    <Suspense fallback={<SignInSkeleton />}>
+      <SignInContent />
+    </Suspense>
+  );
+}
+
+function SignInSkeleton() {
+  return (
+    <div className="w-full max-w-[440px] space-y-6 rounded-lg border border-[#D9D3C7] bg-[#F7F4EF] p-8 shadow-[0_4px_16px_rgba(26,25,23,0.08)]">
+      <div className="h-8 w-32 mx-auto rounded bg-[#E3DDD4] animate-pulse" />
+      <div className="h-4 w-48 mx-auto rounded bg-[#E3DDD4] animate-pulse" />
+      <div className="space-y-3">
+        <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+      </div>
+      <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+      <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+    </div>
+  );
+}
+
+function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const error = searchParams.get("error");

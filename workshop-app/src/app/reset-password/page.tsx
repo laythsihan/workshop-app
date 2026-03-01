@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { Suspense, useState, useCallback, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader, CheckCircle } from "lucide-react";
@@ -27,6 +27,28 @@ const STRENGTH_CONFIG: Record<number, { label: string; color: string; segments: 
 };
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordSkeleton />}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordSkeleton() {
+  return (
+    <div className="flex min-h-svh w-full flex-col items-center justify-center bg-[#F7F4EF] px-6 py-12">
+      <div className="w-full max-w-[440px] space-y-6 rounded-lg border border-[#D9D3C7] bg-[#F7F4EF] p-8 shadow-[0_4px_16px_rgba(26,25,23,0.08)]">
+        <div className="h-8 w-32 mx-auto rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-8 w-48 mx-auto rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");

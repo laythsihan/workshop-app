@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { Suspense, useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Loader } from "lucide-react";
@@ -8,6 +8,28 @@ import { Mail, Loader } from "lucide-react";
 const RESEND_COOLDOWN_SEC = 60;
 
 export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={<ForgotPasswordSkeleton />}>
+      <ForgotPasswordContent />
+    </Suspense>
+  );
+}
+
+function ForgotPasswordSkeleton() {
+  return (
+    <div className="flex min-h-svh w-full flex-col items-center justify-center bg-[#F7F4EF] px-6 py-12">
+      <div className="w-full max-w-[440px] space-y-6 rounded-lg border border-[#D9D3C7] bg-[#F7F4EF] p-8 shadow-[0_4px_16px_rgba(26,25,23,0.08)]">
+        <div className="h-8 w-32 mx-auto rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-8 w-48 mx-auto rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-4 w-64 mx-auto rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+        <div className="h-10 w-full rounded bg-[#E3DDD4] animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+function ForgotPasswordContent() {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
   const [email, setEmail] = useState("");
