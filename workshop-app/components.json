@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "workshop/components",
+    "utils": "workshop/lib/utils",
+    "ui": "workshop/components/ui",
+    "lib": "workshop/lib",
+    "hooks": "workshop/hooks"
+  },
+  "registries": {}
+}

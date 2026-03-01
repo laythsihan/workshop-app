@@ -1,0 +1,390 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// AUTH MODELS (NextAuth)
+// =============================================================================
+
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refresh_token_expires_in Int?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime? // Null until used, then set to prevent reuse
+
+  @@index([token])
+  @@index([userId])
+}
+
+model PasswordVerifyAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// =============================================================================
+// USER & PROFILE
+// =============================================================================
+
+enum AccountType {
+  GUEST // Name only, can comment on invited doc; must create account to navigate away
+  FULL // Full access: upload, invite, comment, navigate anywhere
+}
+
+model User {
+  id                  String      @id @default(cuid())
+  name                String?
+  email               String?     @unique
+  password            String? // Hashed password for email/password auth
+  accountType         AccountType @default(FULL)
+  emailVerified       DateTime?
+  image               String?
+  // Profile fields for workshopping platform
+  displayName         String? // Override for display in comments/mentions
+  // Soft-delete: account scheduled for permanent deletion
+  pendingDeletion     Boolean     @default(false)
+  deletionScheduledAt DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  // Auth relations
+  accounts               Account[]
+  sessions               Session[]
+  passwordResetTokens    PasswordResetToken[]
+  passwordVerifyAttempts PasswordVerifyAttempt[]
+
+  // Workshopping relations
+  ownedDocuments  Document[]       @relation("DocumentOwner")
+  invitationsSent Invitation[]     @relation("InvitationSender")
+  invitations     Invitation[]     @relation("InvitationRecipient")
+  comments        Comment[]
+  documentViewers DocumentViewer[]
+  notifications   Notification[]
+  mentions        Notification[]   @relation("MentionedUser")
+  activityLogs    ActivityLog[]
+
+  @@index([email])
+}
+
+// =============================================================================
+// DOCUMENT
+// =============================================================================
+
+model Document {
+  id          String         @id @default(cuid())
+  title       String? // Optional display name; falls back to filename
+  filename    String // Original filename (e.g. "proposal.docx")
+  // Storage path in Supabase Storage - we store the path, not the file
+  storagePath String
+  mimeType    String // application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, etc.
+  wordCount   Int? // Extracted on upload for dashboard display
+  genre       DocumentGenre? // Optional genre classification
+  status      DocumentStatus @default(DRAFT)
+  dueDate     DateTime? // Optional deadline for reviewers
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Shareable link token - when present, anyone with the link can review
+  shareableToken String? @unique
+
+  ownerId String
+  owner   User   @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  comments        Comment[]
+  guests          Guest[]
+  invitations     Invitation[]
+  documentViewers DocumentViewer[]
+  notifications   Notification[]
+  activityLogs    ActivityLog[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([ownerId, status]) // Dashboard: "documents I own" filtered by status
+  @@index([shareableToken]) // Lookup by shareable link
+}
+
+enum DocumentStatus {
+  DRAFT // Not yet shared
+  IN_REVIEW // Shared with reviewers, feedback in progress
+  COMPLETED // Owner marked complete, ready for export
+}
+
+enum DocumentGenre {
+  SHORT_STORY
+  NOVEL_EXCERPT
+  PERSONAL_ESSAY
+  LYRIC_ESSAY
+  POETRY
+  SCREENPLAY
+  OTHER
+}
+
+// =============================================================================
+// GUEST (Magic-link reviewers, document-scoped)
+// =============================================================================
+// Guests can view and comment on a single document. No account required.
+// Session stored in HTTP-only cookie; identity tied to Guest record.
+
+model Guest {
+  id             String   @id @default(cuid())
+  email          String
+  displayName    String? // Optional; can be set when commenting
+  documentId     String
+  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  claimAttempted Boolean  @default(false) // Set when migrating this guest's comments to a user on sign-up
+
+  comments Comment[]
+
+  @@unique([email, documentId]) // One guest per email per document
+  @@index([documentId])
+}
+
+// =============================================================================
+// INVITE TOKEN (JWT single-use tracking)
+// =============================================================================
+// Tracks used JTI values from invite JWTs. Prevents link forwarding abuse —
+// each invite link can only be used once.
+
+model InviteTokenJti {
+  id         String   @id @default(cuid())
+  jti        String   @unique // JWT ID — unique per invite token
+  usedAt     DateTime @default(now())
+  documentId String // Denormalized for cleanup/queries
+
+  @@index([documentId])
+}
+
+// =============================================================================
+// INVITATION
+// =============================================================================
+// Supports both email invites and shareable-link access.
+// Email invite: email + token (claim link), status pending → accepted when claimed
+// Shareable link: when user accesses via link, we create Invitation with userId + accepted
+
+model Invitation {
+  id          String           @id @default(cuid())
+  token       String           @unique // Unique token for claim link (email invites) or for idempotent link access
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime? // Optional expiry for email invites
+  revokedAt   DateTime? // Set when owner revokes access (status = REVOKED)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  resendCount Int              @default(0) // For rate limit: max 3 resends per invitation
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  // For email invites: email before user exists, userId set when they accept
+  email  String?
+  userId String? // Set when accepted (email invite) or immediately (link access)
+  user   User?   @relation("InvitationRecipient", fields: [userId], references: [id], onDelete: SetNull)
+
+  invitedById String? // Null for shareable-link access
+  invitedBy   User?   @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@index([documentId])
+  @@index([userId, status]) // Dashboard: "documents I'm reviewing" = invitations where userId=me AND status=accepted
+  @@index([token])
+  @@index([email, documentId]) // Prevent duplicate email invites per document
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  REVOKED
+}
+
+// =============================================================================
+// COMMENT (with Medium-style threading)
+// =============================================================================
+// Comments are visible only to document owner (enforced in application logic).
+// Position data stored as JSON for format flexibility: PDF uses page+bounding box,
+// DOCX uses character offsets/node paths, TXT uses character offsets.
+
+model Comment {
+  id              String    @id @default(cuid())
+  content         String    @db.Text // The comment text
+  highlightedText String?   @db.Text // The excerpt from the document that was highlighted
+  // Position data: flexible JSON for different formats
+  // PDF: { page: 1, bounds: { x, y, width, height } }
+  // DOCX/TXT: { startOffset: 0, endOffset: 150 }
+  positionData    Json?
+  tags            String[] // e.g. ["blocking", "nitpick", "suggestion"] - flexible categorization
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  resolvedAt      DateTime? // When owner marks as resolved (optional future feature)
+  resolvedById    String?
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  authorId                 String?
+  author                   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  guestId                  String?
+  guest                    Guest?  @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  // When author is anonymized (deleted user), display this instead
+  deletedAuthorDisplayName String?
+
+  // Threading: null = top-level comment, non-null = reply
+  parentCommentId String?
+  parentComment   Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         Comment[] @relation("CommentReplies")
+
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+
+  @@index([documentId])
+  @@index([authorId])
+  @@index([guestId])
+  @@index([parentCommentId]) // Fetch replies for a comment
+  @@index([documentId, parentCommentId]) // Fetch top-level comments or replies for a document
+}
+
+// =============================================================================
+// DOCUMENT VIEWER (Read Receipts)
+// =============================================================================
+// Tracks when reviewers (or owner) view a document.
+// Useful for "last viewed" timestamps and read receipts.
+
+model DocumentViewer {
+  id       String   @id @default(cuid())
+  viewedAt DateTime @default(now())
+  // Optional: track how long they viewed (could be updated on leave)
+  // For now, we store first view; could add lastViewedAt for "last active" tracking
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId]) // One record per user per document - update viewedAt on subsequent views
+  @@index([documentId])
+  @@index([userId]) // "When did I last view each document?"
+}
+
+// =============================================================================
+// NOTIFICATION
+// =============================================================================
+// For @mentions in comments and general activity (new comment, document completed, etc.)
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  body      String?          @db.Text // Optional longer description
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Optional links to related entities
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  // For @mentions: the user who triggered the notification (e.g. who mentioned you)
+  actorId String?
+  actor   User?   @relation("MentionedUser", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, read]) // Unread notifications for user
+  @@index([createdAt]) // Chronological feed
+}
+
+enum NotificationType {
+  MENTION // Someone @mentioned you in a comment
+  NEW_COMMENT // New comment on document you own or review
+  INVITATION // Invited to review a document
+  DOCUMENT_DONE // Document marked as completed (for reviewers)
+}
+
+// =============================================================================
+// ACTIVITY LOG
+// =============================================================================
+// Tracks document-level activity for the context-aware sidebar
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  type      ActivityType
+  metadata  Json? // Additional context (e.g. new status, recipient name)
+  createdAt DateTime     @default(now())
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  userId String? // Nulled when user is deleted (GDPR erasure) to preserve document history
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+
+  @@index([documentId, createdAt(sort: Desc)])
+  @@index([userId])
+}
+
+enum ActivityType {
+  COMMENT_ADDED
+  REPLY_ADDED
+  STATUS_CHANGED
+  DOCUMENT_SHARED
+  DOCUMENT_RENAMED
+  DOCUMENT_UPLOADED
+  COLLABORATOR_REMOVED
+}
