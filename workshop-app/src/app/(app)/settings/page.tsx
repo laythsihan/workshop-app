@@ -94,6 +94,11 @@ export default async function SettingsPage() {
           These options are currently disabled.
         </p>
       </div>
+
+      {/* Copyright */}
+      <p className="pt-8 text-center text-caption text-[#9E9892]">
+        © 2026 Layth Sihan. All rights reserved.
+      </p>
     </div>
   );
 }

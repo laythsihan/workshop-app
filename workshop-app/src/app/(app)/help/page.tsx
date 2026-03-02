@@ -146,9 +146,12 @@ export default async function HelpPage() {
         </section>
 
         {/* Version Footer */}
-        <footer id="version" className="scroll-mt-8 border-t border-[#D9D3C7] pt-6">
+        <footer id="version" className="scroll-mt-8 space-y-2 border-t border-[#D9D3C7] pt-6">
           <p className="text-caption text-[#9E9892]">
             Workshop v{APP_VERSION}
+          </p>
+          <p className="text-center text-caption text-[#9E9892]">
+            © 2026 Layth Sihan. All rights reserved.
           </p>
         </footer>
     </div>

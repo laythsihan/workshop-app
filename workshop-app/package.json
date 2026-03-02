@@ -2,6 +2,8 @@
   "name": "workshop-app",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
+  "author": "Layth Sihan",
   "type": "module",
   "scripts": {
     "build": "next build",
