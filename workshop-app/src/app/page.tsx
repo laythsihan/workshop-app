@@ -11,11 +11,34 @@ export default async function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F7F4EF]">
-      <main className="flex flex-1 flex-col items-center justify-center px-4">
+      {/* Header — fixed, 64px, transparent */}
+      <header className="fixed top-0 left-0 right-0 z-10 flex h-16 items-center justify-between bg-transparent px-8">
+        <Link
+          href="/"
+          className="font-lora text-display-sm text-[#1A1917]"
+          aria-label="Workshop home"
+        >
+          Workshop
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/auth/signin"
+            className="hidden text-label-md font-medium text-[#6B6560] transition-colors hover:text-[#1A1917] min-[480px]:inline-block"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/auth/signup"
+            className="flex h-9 items-center justify-center rounded-[4px] bg-[#B5763A] px-4 text-label-md font-medium text-white transition-colors hover:bg-[#9E6530]"
+          >
+            Try for free
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero — fills space between header and footer, vertically centered */}
+      <main className="flex min-h-screen flex-1 flex-col items-center justify-center px-4 pt-16 pb-14">
         <div className="mx-auto flex w-full max-w-[480px] flex-col items-center space-y-6">
-          <h1 className="text-center font-lora text-display-xl text-[#1A1917]">
-            Workshop
-          </h1>
           <p className="max-w-[380px] text-center text-body-lg text-[#6B6560]">
             A place to share your writing and get feedback from readers you trust.
           </p>
@@ -25,25 +48,32 @@ export default async function HomePage() {
           >
             Try for free
           </Link>
-          <p className="mt-3 text-center text-body-sm text-[#9E9892]">
-            Already have an account?{" "}
-            <Link
-              href="/auth/signin"
-              className="text-label-sm font-medium text-[#B5763A] hover:underline hover:text-[#9E6530]"
-            >
-              Sign in
-            </Link>
-          </p>
         </div>
       </main>
-      <footer className="flex flex-shrink-0 flex-col items-center justify-between gap-2 px-4 py-4 sm:flex-row sm:gap-0 text-caption text-[#B8B0A4]">
-        <span>© 2026 Workshop. All rights reserved.</span>
-        <span className="flex gap-4">
-          <Link href="/privacy" className="hover:underline">
+
+      {/* Footer — fixed, 56px, transparent, border-top */}
+      <footer className="fixed bottom-0 left-0 right-0 z-10 flex h-14 items-center justify-between border-t border-[#E3DDD4] bg-transparent px-8">
+        <span className="text-caption text-[#B8B0A4]">
+          © 2026 Workshop. All rights reserved.
+        </span>
+        <span className="flex items-center gap-6">
+          <Link
+            href="/privacy"
+            className="text-caption text-[#9E9892] transition-colors hover:text-[#B5763A]"
+          >
             Privacy Policy
           </Link>
-          <Link href="/terms" className="hover:underline">
+          <Link
+            href="/terms"
+            className="text-caption text-[#9E9892] transition-colors hover:text-[#B5763A]"
+          >
             Terms of Service
+          </Link>
+          <Link
+            href="/help"
+            className="text-caption text-[#9E9892] transition-colors hover:text-[#B5763A]"
+          >
+            Help
           </Link>
         </span>
       </footer>
