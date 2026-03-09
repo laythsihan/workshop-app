@@ -502,7 +502,7 @@ export function AppSidebar({ user: initialUser }: AppSidebarProps) {
                       <div className="my-1 border-t border-[#D9D3C7]" />
                       <button
                         type="button"
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={() => signOut({ callbackUrl: "/auth/signin" })}
                         className="flex h-8 w-full items-center gap-2 rounded px-4 text-body-sm text-[#A63D2F] transition-colors hover:bg-[#EFEBE3]"
                       >
                         <LogOut className="size-4" />
@@ -696,7 +696,7 @@ export function AppSidebar({ user: initialUser }: AppSidebarProps) {
                       <div className="my-1 border-t border-[#D9D3C7]" />
                       <button
                         type="button"
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={() => signOut({ callbackUrl: "/auth/signin" })}
                         className="flex h-8 w-full items-center gap-2 rounded px-4 text-body-sm text-[#A63D2F] transition-colors hover:bg-[#EFEBE3]"
                       >
                         <LogOut className="size-4" />

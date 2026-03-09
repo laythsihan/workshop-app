@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -11,10 +11,12 @@ import { GoogleLogo, DiscordLogo } from "workshop/components/auth/icons";
 function getErrorMessage(error: string | null): string {
   if (!error) return "";
   switch (error) {
+    case "OAuthCallbackError":
+      return "Something went wrong signing in. Please try again.";
+    case "OAuthAccountNotLinked":
+      return "This email is already associated with a different sign-in method.";
     case "CredentialsSignin":
       return "Incorrect email or password. Please try again.";
-    case "OAuthAccountNotLinked":
-      return "This email is already associated with a different sign-in method. Try signing in with Google or Discord.";
     default:
       return "Something went wrong. Please try again.";
   }
@@ -47,6 +49,16 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const error = searchParams.get("error");
+
+  useEffect(() => {
+    if (error) {
+      const cleanUrl =
+        callbackUrl && callbackUrl !== "/dashboard"
+          ? `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+          : "/auth/signin";
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, [error, callbackUrl]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -95,12 +107,14 @@ function SignInContent() {
 
   return (
     <div className="w-full max-w-[440px] space-y-6 rounded-lg border border-[#D9D3C7] bg-[#F7F4EF] p-8 shadow-[0_4px_16px_rgba(26,25,23,0.08)]">
-      <h1 className="font-lora text-display-sm text-[#1A1917] text-center">
-        Workshop
-      </h1>
-      <p className="text-body-sm text-[#9E9892] text-center">
-        A workshop space for writers
-      </p>
+      <div className="space-y-1">
+        <h1 className="font-lora text-display-sm text-[#1A1917] text-center">
+          Workshop
+        </h1>
+        <p className="text-body-sm text-[#9E9892] text-center">
+          A workshop space for writers
+        </p>
+      </div>
 
       <div className="flex flex-col gap-3">
         <button

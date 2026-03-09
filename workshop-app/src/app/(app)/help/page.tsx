@@ -151,7 +151,7 @@ export default async function HelpPage() {
             Workshop v{APP_VERSION}
           </p>
           <p className="text-center text-caption text-[#9E9892]">
-            © 2026 Layth Sihan. All rights reserved.
+            © 2026 Workshop. All rights reserved.
           </p>
         </footer>
     </div>

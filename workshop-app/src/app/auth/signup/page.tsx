@@ -165,12 +165,14 @@ function SignUpContent() {
 
   return (
     <div className="w-full max-w-[440px] space-y-6 rounded-lg border border-[#D9D3C7] bg-[#F7F4EF] p-8 shadow-[0_4px_16px_rgba(26,25,23,0.08)]">
-      <h1 className="font-lora text-display-sm text-[#1A1917] text-center">
-        Workshop
-      </h1>
-      <h2 className="font-lora text-display-sm text-[#1A1917] text-center">
-        Create your account
-      </h2>
+      <div className="space-y-1">
+        <h1 className="font-lora text-display-sm text-[#1A1917] text-center">
+          Workshop
+        </h1>
+        <h2 className="font-lora text-display-sm text-[#1A1917] text-center">
+          Create your account
+        </h2>
+      </div>
 
       <div className="flex flex-col gap-3">
         <button

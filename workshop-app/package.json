@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "author": "Layth Sihan",
+  "author": "Workshop",
   "type": "module",
   "scripts": {
     "build": "next build",

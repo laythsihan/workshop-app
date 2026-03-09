@@ -51,6 +51,7 @@ import {
 import { ReviewersInviteList } from "workshop/components/documents/reviewers-invite-list";
 import { CounterBadge } from "workshop/components/ui/counter-badge";
 
+const SIDEBAR_DOCUMENT_STORAGE_KEY = "sidebar_document_collapsed";
 const COLLABORATORS_STORAGE_KEY = "sidebar_collaborators_collapsed";
 const ACTIVITY_STORAGE_KEY = "sidebar_collaborator_activity_collapsed";
 const ACTIVITY_STORAGE_KEY_LEGACY = "sidebar_activity_collapsed";
@@ -192,8 +193,17 @@ export function DocumentSidebar({
   user: initialUser,
   isGuest = false,
 }: DocumentSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(isGuest);
+  const [isCollapsed, setIsCollapsedState] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsCollapsedState(getStoredCollapsed(SIDEBAR_DOCUMENT_STORAGE_KEY, true));
+  }, []);
+
+  const setIsCollapsed = useCallback((value: boolean) => {
+    setIsCollapsedState(value);
+    setStoredCollapsed(SIDEBAR_DOCUMENT_STORAGE_KEY, value);
+  }, []);
 
   const { data: userData } = api.user.me.useQuery(undefined, {
     enabled: !isGuest,
@@ -335,7 +345,7 @@ export function DocumentSidebar({
                       <div className="my-1 border-t border-[#D9D3C7]" />
                       <button
                         type="button"
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={() => signOut({ callbackUrl: "/auth/signin" })}
                         className="flex h-8 w-full items-center gap-2 rounded px-4 text-body-sm text-[#A63D2F] transition-colors hover:bg-[#EFEBE3]"
                       >
                         <LogOut className="size-4" />
@@ -721,7 +731,7 @@ export function DocumentSidebar({
                       <div className="my-1 border-t border-[#D9D3C7]" />
                       <button
                         type="button"
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={() => signOut({ callbackUrl: "/auth/signin" })}
                         className="flex h-8 w-full items-center gap-2 rounded px-4 text-body-sm text-[#A63D2F] transition-colors hover:bg-[#EFEBE3]"
                       >
                         <LogOut className="size-4" />

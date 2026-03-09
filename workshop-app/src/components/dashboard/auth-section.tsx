@@ -10,7 +10,7 @@ export function AuthSection({ session }: AuthSectionProps) {
     return (
       <div className="flex items-center gap-4">
         <Link
-          href="/api/auth/signout"
+          href="/api/auth/signout?callbackUrl=%2Fauth%2Fsignin"
           className="text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           Sign out

@@ -30,4 +30,4 @@ Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/ver
 
 ---
 
-Copyright © 2026 Layth Sihan. All rights reserved.
+Copyright © 2026 Workshop. All rights reserved.
