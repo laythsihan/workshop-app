@@ -25,19 +25,6 @@ const PANEL_MAX_WIDTH = 600;
 const PANEL_DEFAULT_WIDTH = 400;
 const PANEL_COLLAPSED_WIDTH = 48;
 const STORAGE_KEY = "comments-panel-width";
-const COMMENTS_PANEL_COLLAPSED_KEY = "comments_panel_collapsed";
-
-function getCommentsPanelCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
-  const stored = localStorage.getItem(COMMENTS_PANEL_COLLAPSED_KEY);
-  if (stored === null) return false;
-  return stored === "true";
-}
-
-function setCommentsPanelCollapsed(value: boolean) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(COMMENTS_PANEL_COLLAPSED_KEY, value ? "true" : "false");
-}
 
 function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, string> = {
@@ -192,16 +179,7 @@ export function DocumentPageContent({
     highlightRects?: { x: number; y: number; width: number; height: number }[];
   } | null>(null);
 
-  const [isPanelOpen, setIsPanelOpenState] = useState(true);
-
-  useEffect(() => {
-    setIsPanelOpenState(!getCommentsPanelCollapsed());
-  }, []);
-
-  const setIsPanelOpen = useCallback((value: boolean) => {
-    setIsPanelOpenState(value);
-    setCommentsPanelCollapsed(!value);
-  }, []);
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [userFilter, setUserFilter] = useState<string | null>(null);
   const [hasTypedComment, setHasTypedComment] = useState(false);
   const [navigateToComment, setNavigateToComment] = useState<{
